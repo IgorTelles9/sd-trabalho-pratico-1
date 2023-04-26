@@ -2,18 +2,18 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <string.h>
 #include <string>
-#include <fcntl.h>
 #include <math.h>
 #include <random>
 
 using namespace std;
 
-const int BUFFER_SIZE = 20; // size of the buffer
-int NUM_PRODUCE = 40; // number of items to produce
+const int BUFFER_SIZE = 2000; // size of the buffer
+
 
 int buffer[BUFFER_SIZE]; // buffer to hold items produced
 int num_produced = 0; // counter for number of items produced
@@ -33,12 +33,16 @@ bool isPrime(int n) {
     return true;
 }
 
-int main() {
-    
+int main(int argc, char* argv[]) {
+
+
+    using std::istringstream;
+    int NUM_PRODUCE; // number of items to produce
+    istringstream(argv[1]) >> NUM_PRODUCE; 
     
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(25, 63); // define the range
+    std::uniform_int_distribution<> distr(1, 100); // define the range
 
     int fd[2];
     pid_t pid;
@@ -110,10 +114,9 @@ int main() {
         cout << "Okay its over" << endl;
         // close the read end of the pipe
         close(fd[0]);
-          
+        return 0;
 
     }
         
-
     return 0;
 }
