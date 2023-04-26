@@ -2,36 +2,43 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mutex>
-#include <semaphore.h>
-#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <string.h>
+#include <string>
 #include <fcntl.h>
+#include <math.h>
+#include <random>
 
 using namespace std;
 
 const int BUFFER_SIZE = 20; // size of the buffer
-int NUM_PRODUCE = 3; // number of items to produce
+int NUM_PRODUCE = 40; // number of items to produce
 
 int buffer[BUFFER_SIZE]; // buffer to hold items produced
 int num_produced = 0; // counter for number of items produced
 int in = 0; // index of next empty slot in the buffer
 
 
-
+bool isPrime(int n) {
+    if (n < 2) {
+        return false;
+    }
+    int limit = sqrt(n);
+    for (int i = 2; i <= limit; i++) {
+        if (n % i == 0) {
+            return false;
+        }
+    }
+    return true;
+}
 
 int main() {
     
-    //sem_t mutex;
-    //sem_init(&mutex, 1, 1);
-    sem_t* mutex = sem_open("/mutex", O_CREAT, 0644, 1);
-
-    //sem_t empty;
-    //sem_init(&empty, 1, BUFFER_SIZE);
-    sem_t* empty = sem_open("/empty", O_CREAT, 0644, BUFFER_SIZE);
-
-    //sem_t full;
-    //sem_init(&full, 1, 0);
-    sem_t* full = sem_open("/full", O_CREAT, 0644, 0);
+    
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(25, 63); // define the range
 
     int fd[2];
     pid_t pid;
@@ -51,62 +58,62 @@ int main() {
     } else if (pid > 0) {
         // parent process
 
-        sem_t* mutex = sem_open("/mutex", 0);
-        sem_t* empty = sem_open("/empty", 0);
-        sem_t* full = sem_open("/full", 0);
-
         // close the read end of the pipe
         close(fd[0]);
         
-
-        while (NUM_PRODUCE > 0 ) {
-            sem_wait(empty);
-
-            sem_wait(mutex);
-            // write data to the pipe
-            write(fd[1], "Hello, world!", 14);
-            sem_post(mutex);
-            sem_post(full);
+        int ni = 1;
+        while (NUM_PRODUCE > 0) {
+            ni += distr(gen);
+            int bytes_written = write(fd[1], &ni, sizeof(ni));
+            if (bytes_written == -1) {
+                cerr << "Error: Unable to write to pipe" << endl;
+                return 1;
+            }
             NUM_PRODUCE--;
+            cout << "Producer sent number: " << ni << endl;
         }
 
-        sem_wait(mutex);
+            int zero = 0;
             // write data to the pipe
-            write(fd[1], "0", 2);
-            sem_post(mutex);
+            write(fd[1], &zero, sizeof(zero));
+            
 
         // close the write end of the pipe
         close(fd[1]);
 
-        exit(EXIT_SUCCESS);
     } else {
         
-        sem_t* mutex = sem_open("/mutex", 0);
-        sem_t* empty = sem_open("/empty", 0);
-        sem_t* full = sem_open("/full", 0);
+        
         // close the write end of the pipe
         close(fd[1]);
         
         // child process
         
-         while (1){
-            cout << "jfezes entrei "  << endl;
-            sem_wait(full);
-            cout << "jfezes entrei 2"  << endl;
-            sem_wait(mutex);
-            read(fd[0], buf, 14);
-            sem_post(mutex);
-            sem_post(empty);
-            cout << "Child process received: " << buf << endl;
-
+         // Read integers from the pipe and print them
+        int number;
+        int bytes_read;
+        while ((bytes_read = read(fd[0], &number, sizeof(number))) > 0) {
+            cout << "Consumer received number: " << number << endl;
+            if (isPrime(number)){
+                cout << "The number "<< number  <<" is Prime!" << endl;
+            }
+            else{
+                cout << "The number " << number <<" is NOT Prime!" << endl;
+            }
         }
-        
 
-        cout << "Child process received: " << buf << endl;
+        if (bytes_read == -1) {
+            cerr << "Error: Unable to read from pipe" << endl;
+            return 1;
+        }
+
+        cout << "Okay its over" << endl;
         // close the read end of the pipe
         close(fd[0]);
-        exit(EXIT_SUCCESS);
+          
+
     }
+        
 
     return 0;
 }
