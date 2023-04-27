@@ -31,28 +31,32 @@ int main(int argc, char* argv[]){
     using std::cout;
     cout << "pid: " << getpid() << "\n";
     bool isBusy = false;
+    bool isBlocking = false;
     if (strcmp(argv[1], "busy") == 0){
         isBusy = true;
     }
-
+	
+    if (strcmp(argv[1], "blocking") == 0){
+        isBlocking = true;
+    }
+    
+    signal(SIGINT, handlerSignal);
+    signal(SIGQUIT, handlerSignal);
+    signal(SIGILL, handlerSignal);
+    
     while (isBusy){
         cout<<"Running stuff while I dont receive a signal"<<"\n";
-        sleep(2);
-        signal(SIGINT, handlerSignal);
-        signal(SIGQUIT, handlerSignal);
-        signal(SIGILL, handlerSignal);
+        sleep(3);
+    }
+
+    while (isBlocking){
+        pause();
+        
     }
 
     while (!isBusy){
-        signal(SIGINT, handlerSignal);
-        signal(SIGQUIT, handlerSignal);
-        signal(SIGILL, handlerSignal);
         pause();
     }
-
-    // signal(SIGINT, handlerSignal);
-    // signal(SIGQUIT, handlerSignal);
-    // signal(SIGILL, handlerSignal);
 
     return 0;
     
