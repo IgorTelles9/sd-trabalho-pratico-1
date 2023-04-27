@@ -36,6 +36,8 @@ int main(int argc, char* argv[]){
     }
 
     while (isBusy){
+        cout<<"Running stuff while I dont receive a signal"<<"\n";
+        sleep(2);
         signal(SIGINT, handlerSignal);
         signal(SIGQUIT, handlerSignal);
         signal(SIGILL, handlerSignal);
