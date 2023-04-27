@@ -9,14 +9,21 @@
 #include <sstream>
 #include <time.h>
 
+int isPrime(int number){
+    bool isPrime = true;
+
+    for (int i = sqrt(number); i > 1; i--){
+        if(number % i == 0){
+            return 0;
+        }
+    }
+    return 1; 
+}
 
 int main (int argc, char* argv[]) { 
     using std::cout;
     using std::cerr; 
     using std::string;
-
-    int times;
-    std::istringstream(argv[1]) >> times;
 
     int listening = socket(AF_INET, SOCK_STREAM, 0);
     if (listening < 0){
@@ -39,12 +46,15 @@ int main (int argc, char* argv[]) {
         return -3;
     }
 
+    cout << "Waiting for connection on port 54000..." << "\n";
+
     sockaddr_in client;
     socklen_t clientSize = sizeof(client);
     char host[NI_MAXHOST];
     char svc[NI_MAXSERV];
 
     int clientSocket = accept(listening,(sockaddr*)&client, &clientSize);
+
 
     if (clientSocket < 0){
         cerr << "Problem with client connecting!" << "\n";
@@ -66,41 +76,36 @@ int main (int argc, char* argv[]) {
         cout << host << " connected on " << ntohs(client.sin_port) << "\n";
     }
 
-    char buffer[4096];
-    int prev = 1; 
-    int curr; 
-    srand (time(NULL));
-    for(int i =0; i < times + 1; i++){
-        memset(buffer, 0, 4096);
+    int bufferSize = 20;
+    char buffer[bufferSize];
+    int bytesRecv;
+    int numberRecv;
+    bool running = true; 
+    while(running){
+        memset(buffer, 0, bufferSize);
 
-        int delta = rand() % 100 + 1; 
-        if (i == times){
-            curr = 0;
+        // receive number
+        bytesRecv = recv(clientSocket, buffer, bufferSize, 0);
+        std::istringstream(string(buffer, bytesRecv)) >> numberRecv;
+        if (numberRecv == 0){
+            running = false;
         } else {
-            curr = prev + delta;
+            // check if number is prime
+            string res = std::to_string(isPrime(numberRecv));
+            // send response
+            // memset(buffer, 0, bufferSize);
+            send(clientSocket, res.c_str(), res.size() + 1, 0); 
+            
         }
 
-        string currStr = std::to_string(curr);
-        send(clientSocket, currStr.c_str(), currStr.size() + 1, 0); 
-
-        prev = curr;
-        
-
-        int bytesRecv = recv(clientSocket, buffer, 4096, 0);
-        
         if (bytesRecv < 0){
             cerr << "Connection issue" << "\n";
             break;
         } 
-        if(bytesRecv == 0) {
+        if(bytesRecv == 0 || numberRecv == 0) {
             cout << "The client disconnected" << "\n";
             break;
         }
-
-        cout << "Received: " << string(buffer, 0 ,bytesRecv) << "\n";
-        
-        //send(clientSocket, buffer, bytesRecv + 1, 0);
-
     }
 
     close(clientSocket);
