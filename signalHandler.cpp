@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
-// #include <stdlib.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -32,6 +31,7 @@ int main(int argc, char* argv[]){
     cout << "pid: " << getpid() << "\n";
     bool isBusy = false;
     bool isBlocking = false;
+	
     if (strcmp(argv[1], "busy") == 0){
         isBusy = true;
     }
@@ -52,10 +52,6 @@ int main(int argc, char* argv[]){
     while (isBlocking){
         pause();
         
-    }
-
-    while (!isBusy){
-        pause();
     }
 
     return 0;
