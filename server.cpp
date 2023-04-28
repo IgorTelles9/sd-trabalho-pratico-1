@@ -64,17 +64,9 @@ int main (int argc, char* argv[]) {
     close(listening);
 
     memset(host, 0, NI_MAXHOST);
-    memset(svc, 0, NI_MAXSERV);
 
-    int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0);
-    
-    if (result){
-        cout << host << " connected on " << svc << "\n";
-
-    } else {
-        inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
-        cout << host << " connected on " << ntohs(client.sin_port) << "\n";
-    }
+    inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
+    cout << host << " connected on " << ntohs(client.sin_port) << "\n";
 
     int bufferSize = 20;
     char buffer[bufferSize];
@@ -93,7 +85,6 @@ int main (int argc, char* argv[]) {
             // check if number is prime
             string res = std::to_string(isPrime(numberRecv));
             // send response
-            // memset(buffer, 0, bufferSize);
             send(clientSocket, res.c_str(), res.size() + 1, 0); 
             
         }
